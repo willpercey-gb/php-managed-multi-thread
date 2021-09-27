@@ -1,0 +1,26 @@
+#!/usr/bin/env php
+<?php
+
+use Opis\Closure\SerializableClosure;
+
+require_once dirname(__DIR__).'/vendor/autoload.php';
+//require_once dirname(__DIR__, 2) . '/autoload.php';
+
+(new \NunoMaduro\Collision\Provider())->register();
+
+$args = new \Symfony\Component\Console\Input\ArgvInput();
+
+$cache = new \Symfony\Component\Cache\Adapter\FilesystemAdapter();
+
+if(!$args->getFirstArgument()){
+    throw new \Exception('No thread name given');
+}
+
+$serializedThread = $cache->get($args->getFirstArgument(), fn(\Symfony\Contracts\Cache\ItemInterface $item) => null);
+
+SerializableClosure::setSecretKey($args->getFirstArgument());
+
+/** @var SerializableClosure $thread */
+$thread = unserialize($serializedThread, ['allowed_classes' => [SerializableClosure::class]]);
+
+$thread->getClosure()->__invoke();
